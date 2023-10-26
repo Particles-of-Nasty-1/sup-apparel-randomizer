@@ -100,7 +100,10 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
     print(random_numbers_str2)
 
     # Modify the second line
-    lines[0] = f'rp setapparel {last_numbers}\n'
+    if last_numbers == "" :
+        lines[0] = f'echo\n'
+    else:
+        lines[0] = f'rp setapparel {last_numbers}\n'
 
     if random_numbers == "echo\n" :
         lines[1] = f'echo\n'
@@ -139,34 +142,49 @@ def run_script():
     time_delay_seconds = config['time_delay_seconds']
 
     while running_flag.is_set():
-        if not tip_button_clicked:  # Only reset if the tip_button wasn't clicked in the last iteration
-            tip_particles = 0
-        if is_gmod_active():  # Check if GMod is the active window
-            category = categories_order[0]
-            checkbox_index = list(config.keys())[3:].index(category)
-            if checkbox_vars[checkbox_index].get() == 0:
-                categories_order.append(categories_order.pop(0))
-                continue
-            
-            if player_color_var.get() == 1:
-                random_numbers = generate_numbers()
-            else:
-                random_numbers = "echo\n"
+        # Get the list of selected categories
+        selected_categories = [apparel_categories[i] for i, var in enumerate(checkbox_vars) if var.get() == 1]
 
-            if physgun_color_var.get() == 1: 
-                random_numbers2 = generate_numbers2()
-            else:
-                random_numbers2 = "echo\n"
-            last_numbers = select_last_numbers_from_list(category)
-            overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2)
-            tip_particles == 0
-            tip_button_clicked = False
-            press_f9_key()
+        # Check if either physgun_color or player_color are selected
+        color_selected = physgun_color_var.get() == 1 or player_color_var.get() == 1
 
-            time.sleep(1)
-            
-            categories_order.append(categories_order.pop(0))
-        time.sleep(time_delay_seconds)
+        # If no categories are selected but color is selected, we will still run once
+        if not selected_categories and not color_selected:
+            time.sleep(time_delay_seconds)
+            continue
+
+        if not selected_categories:
+            selected_categories = ['dummy']  # A dummy category to run the loop once
+
+        for category in selected_categories:
+            if not tip_button_clicked:  # Only reset if the tip_button wasn't clicked in the last iteration
+                tip_particles = 0
+            if is_gmod_active():  # Check if GMod is the active window
+                if player_color_var.get() == 1:
+                    random_numbers = generate_numbers()
+                else:
+                    random_numbers = "echo\n"
+
+                if physgun_color_var.get() == 1: 
+                    random_numbers2 = generate_numbers2()
+                else:
+                    random_numbers2 = "echo\n"
+
+                # Only fetch apparel if the category isn't 'dummy'
+                if category != 'dummy':
+                    last_numbers = select_last_numbers_from_list(category)
+                    overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2)
+                else:
+                    # If no apparel category is selected, just update colors
+                    overwrite_cfg('', output_directory, output_filename, random_numbers, random_numbers2)
+
+                tip_particles == 0
+                tip_button_clicked = False
+                press_f9_key()
+
+                time.sleep(1)  # Wait for a bit after selecting from each category
+
+        time.sleep(time_delay_seconds)  # Rest after processing all selected categories
 
 # Create the main window
 root = tk.Tk()

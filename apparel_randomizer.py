@@ -57,21 +57,38 @@ def select_last_numbers_from_list(category):
         else:
             chosen_item = ''
 
-    last_numbers = chosen_item.split()[-1] if chosen_item else ''  # Extract the last string of numbers
+    last_numbers = chosen_item
     last_selected[category] = chosen_item  # Update the last selected item for this category
         
     return last_numbers
 
 # Function to overwrite the output file with selected numbers
-def overwrite_output_with_numbers(last_numbers, output_directory, output_filename):
+def overwrite_cfg(last_numbers, output_directory, output_filename):
     # Construct the full output path
     output_path = os.path.join(output_directory, output_filename)
-    # Create the "rp setapparel [selected number]" format string
-    output_text = f'rp setapparel {last_numbers}'
-    # Overwrite the output file with the selected numbers
+
+    parts = last_numbers.split()  # Split the chosen_item into parts
+    last_numbers = parts[-1] if last_numbers else ''  # Extract the last string of numbers
+    name = ' '.join(parts[:-1]) if last_numbers else ''  # Join the remaining parts as "name"
+    
+    # If the file doesn't exist, just create a new one
+    if not os.path.exists(output_path):
+        with open(output_path, 'w') as file:
+            file.write(f'rp setapparel {last_numbers}\n')
+        print(f"Selected numbers: rp setapparel {last_numbers}")
+        return
+
+    # Read the existing lines of the file
+    with open(output_path, 'r') as file:
+        lines = file.readlines()
+
+    # Modify the first line
+    lines[0] = f'rp setapparel {last_numbers}\n'
+
+    # Write the modified lines back to the file
     with open(output_path, 'w') as file:
-        file.write(output_text)
-    print(f"Selected numbers: {output_text}")
+        file.writelines(lines)
+    print(f"Selected Apparel: {name}")
 
 # Function to press the F9 key
 def press_f9_key():
@@ -95,7 +112,7 @@ def run_script():
                 continue
 
             last_numbers = select_last_numbers_from_list(category)
-            overwrite_output_with_numbers(last_numbers, output_directory, output_filename)
+            overwrite_cfg(last_numbers, output_directory, output_filename)
             press_f9_key()
             time.sleep(1)
 

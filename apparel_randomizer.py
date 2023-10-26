@@ -298,6 +298,7 @@ output_directory_entry.insert(0, config.get('output_directory', "C:\\SteamLibrar
 update_output_directory_button = tk.Button(root, text="Update", command=update_output_directory)
 update_output_directory_button.grid(row=2, column=2, padx=10, pady=5, sticky='w')
 
+# Add checkbox's for the apparel categories
 checkbox_vars = []
 for i, category in enumerate(apparel_categories):
     checkbox_var = tk.IntVar()
@@ -305,6 +306,11 @@ for i, category in enumerate(apparel_categories):
     checkbox_text = category.capitalize()  # Capitalize the first letter
     checkbox = tk.Checkbutton(root, text=checkbox_text, variable=checkbox_var)
     checkbox.grid(row=3 + i, column=0, padx=10, pady=5, sticky='w')
+
+# Add a "Player Color" checkbox below the existing checkboxes
+player_color_var = tk.IntVar()
+player_color_checkbox = tk.Checkbutton(root, text="Player Color", variable=player_color_var)
+player_color_checkbox.grid(row=len(apparel_categories) + 3, column=0, padx=10, pady=5, sticky='w')
 
 # Create and pack the customize buttons
 customize_buttons = []

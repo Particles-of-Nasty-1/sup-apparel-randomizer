@@ -34,6 +34,14 @@ def load_config(config_filename):
 # Load the configuration from the JSON file at the beginning of the script
 config = load_config('config.json')
 
+
+tip_particles = 0
+tip_button_clicked = False
+def tip_button():
+    global tip_particles, tip_button_clicked
+    tip_particles = 1
+    tip_button_clicked = True
+
 global last_selected, categories_order
 last_selected = {}  # Dictionary to keep track of the last chosen item for each category
 categories_order = list(config.keys())[3:]  # Initialize with categories
@@ -57,21 +65,83 @@ def select_last_numbers_from_list(category):
         else:
             chosen_item = ''
 
-    last_numbers = chosen_item.split()[-1] if chosen_item else ''  # Extract the last string of numbers
+    last_numbers = chosen_item
     last_selected[category] = chosen_item  # Update the last selected item for this category
         
     return last_numbers
 
 # Function to overwrite the output file with selected numbers
-def overwrite_output_with_numbers(last_numbers, output_directory, output_filename):
+def overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2):
+    global tip_particles
     # Construct the full output path
     output_path = os.path.join(output_directory, output_filename)
-    # Create the "rp setapparel [selected number]" format string
-    output_text = f'rp setapparel {last_numbers}'
-    # Overwrite the output file with the selected numbers
+
+    parts = last_numbers.split()  # Split the chosen_item into parts
+    last_numbers = parts[-1] if last_numbers else ''  # Extract the last string of numbers
+    name = ' '.join(parts[:-1]) if last_numbers else ''  # Join the remaining parts as "name"
+
+    # If the file doesn't exist, just create a new one
+    if not os.path.exists(output_path):
+        with open(output_path, 'w') as file:
+            file.write(f'rp setapparel {last_numbers}\n')
+        print(f"Selected numbers: rp setapparel {last_numbers}")
+        return
+
+    # Read the existing lines of the file
+    with open(output_path, 'r') as file:
+        lines = file.readlines()
+
+    random_numbers_str = ', '.join(map(str, random_numbers))
+    random_numbers_str = random_numbers_str.replace(",", "")  # Remove commas
+    print(random_numbers_str)
+
+    random_numbers_str2 = ', '.join(map(str, random_numbers2))
+    random_numbers_str2 = random_numbers_str2.replace(",", "")  # Remove commas
+    print(random_numbers_str2)
+
+    # Modify the second line if it exists, otherwise insert a placeholder line
+    if len(lines) > 0:
+        if last_numbers == "":
+            lines[0] = f'echo\n'
+        else:
+            lines[0] = f'rp setapparel {last_numbers}\n'
+    else:
+        lines.insert(0, 'placeholder_line\n')
+
+    # Modify the third line if it exists, otherwise insert a placeholder line
+    if len(lines) > 1:
+        if random_numbers == "echo\n":
+            lines[1] = f'echo\n'
+        else:
+            lines[1] = f'rp playercolor {random_numbers_str}\n'
+    else:
+        lines.insert(1, 'placeholder_line\n')
+
+    # Modify the fourth line if it exists, otherwise insert a placeholder line
+    if len(lines) > 2:
+        if random_numbers2 == "echo\n":
+            lines[2] = f'echo\n'
+        else:
+            lines[2] = f'rp physcolor {random_numbers_str2}\n'
+    else:
+        lines.insert(2, 'placeholder_line\n')
+
+    if tip_particles == 1:
+        if len(lines) > 3:
+            lines[3] = f'rp wiremoney STEAM_0:0:142468457 1000\n'
+        else:
+            lines.insert(3, 'placeholder_line\n')
+    else:
+        if len(lines) > 3:
+            lines[3] = ' '
+        else:
+            lines.insert(3, 'placeholder_line\n')
+
+    # Write the modified lines back to the file
     with open(output_path, 'w') as file:
-        file.write(output_text)
-    print(f"Selected numbers: {output_text}")
+        file.writelines(lines)
+    print(f"Selected Apparel: {name}")
+
 
 # Function to press the F9 key
 def press_f9_key():
@@ -79,10 +149,7 @@ def press_f9_key():
 
 # Function to run the main script
 def run_script():
-    global categories_order, last_selected, config
-
-    # Load the configuration from the JSON file
-    config = load_config('config.json')
+    global categories_order, last_selected, config, tip_particles, tip_button_clicked
 
     # Extract configuration values
     output_directory = config['output_directory'] + '\\garrysmod\\cfg'
@@ -90,21 +157,49 @@ def run_script():
     time_delay_seconds = config['time_delay_seconds']
 
     while running_flag.is_set():
-        if is_gmod_active():  # Check if GMod is the active window
-            category = categories_order[0]
-            checkbox_index = list(config.keys())[3:].index(category)
-            if checkbox_vars[checkbox_index].get() == 0:
-                categories_order.append(categories_order.pop(0))
-                continue
+        # Get the list of selected categories
+        selected_categories = [apparel_categories[i] for i, var in enumerate(checkbox_vars) if var.get() == 1]
 
-            last_numbers = select_last_numbers_from_list(category)
-            overwrite_output_with_numbers(last_numbers, output_directory, output_filename)
-            press_f9_key()
-            time.sleep(1)
+        # Check if either physgun_color or player_color are selected
+        color_selected = physgun_color_var.get() == 1 or player_color_var.get() == 1
 
-            categories_order.append(categories_order.pop(0))
+        # If no categories are selected but color is selected, we will still run once
+        if not selected_categories and not color_selected:
+            time.sleep(time_delay_seconds)
+            continue
 
-        time.sleep(time_delay_seconds)
+        if not selected_categories:
+            selected_categories = ['dummy']  # A dummy category to run the loop once
+
+        for category in selected_categories:
+            if not tip_button_clicked:  # Only reset if the tip_button wasn't clicked in the last iteration
+                tip_particles = 0
+            if is_gmod_active():  # Check if GMod is the active window
+                if player_color_var.get() == 1:
+                    random_numbers = generate_numbers()
+                else:
+                    random_numbers = "echo\n"
+
+                if physgun_color_var.get() == 1: 
+                    random_numbers2 = generate_numbers2()
+                else:
+                    random_numbers2 = "echo\n"
+
+                # Only fetch apparel if the category isn't 'dummy'
+                if category != 'dummy':
+                    last_numbers = select_last_numbers_from_list(category)
+                    overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2)
+                else:
+                    # If no apparel category is selected, just update colors
+                    overwrite_cfg('', output_directory, output_filename, random_numbers, random_numbers2)
+
+                tip_particles == 0
+                tip_button_clicked = False
+                press_f9_key()
+
+                time.sleep(1)  # Wait for a bit after selecting from each category
+
+        time.sleep(time_delay_seconds)  # Rest after processing all selected categories
 
 # Create the main window
 root = tk.Tk()
@@ -227,14 +322,6 @@ def open_customization_windows():
         if checkbox_vars[i].get() == 1:
             customize_apparel(list_filename)
 
-# Function to load configuration from a JSON file
-def load_config(filename):
-    try:
-        with open(filename, 'r') as config_file:
-            return json.load(config_file)
-    except FileNotFoundError:
-        return {}
-
 # Function to update time_delay_seconds
 def update_time_delay():
     global time_delay_seconds
@@ -261,19 +348,37 @@ def update_output_directory():
     with open('config.json', 'w') as config_file:
         json.dump(config, config_file, indent=4)
 
+# Function to generate random numbers
+def generate_numbers():
+        # Generate 3 random numbers between 0.000000 and 1.000000
+        random_numbers = [random.uniform(0, 1) for _ in range(3)]
+        return random_numbers
+
+    
+def generate_numbers2():
+        # Generate 3 random numbers between 0.000000 and 1.000000
+        random_numbers2 = [random.uniform(0, 1) for _ in range(3)]
+        return random_numbers2
+
+        
 # Set the geometry
-root.geometry("400x285")
+root.geometry("350x370")
 
-# Load the configuration from the JSON file at the beginning of the script
-config = load_config('config.json')
+# Create a frame for the start and stop buttons
+button_frame = tk.Frame(root)
+button_frame.grid(row=0, column=0, padx=10, pady=5, sticky='w')
 
-# Create and pack the start button
-start_button = tk.Button(root, text="Start", command=start_script)
+# Create and pack the start button inside the button_frame
+start_button = tk.Button(button_frame, text="Start", command=start_script)
 start_button.grid(row=0, column=0, padx=10, pady=5, sticky='w')
 
-# Create and pack the stop button
-stop_button = tk.Button(root, text="Stop", command=stop_script)
+# Create and pack the stop button inside the button_frame
+stop_button = tk.Button(button_frame, text="Stop", command=stop_script)
 stop_button.grid(row=0, column=1, padx=10, pady=5, sticky='w')
+
+# Create another button to the right of the start and stop buttons
+additional_button = tk.Button(root, text="Send Tip", command=tip_button)
+additional_button.grid(row=0, column=1, padx=10, pady=5, sticky='e')
 
 # Create and pack the time delay label and entry
 time_delay_label = tk.Label(root, text="Time Delay (seconds):")
@@ -295,6 +400,7 @@ output_directory_entry.insert(0, config.get('output_directory', "C:\\SteamLibrar
 update_output_directory_button = tk.Button(root, text="Update", command=update_output_directory)
 update_output_directory_button.grid(row=2, column=2, padx=10, pady=5, sticky='w')
 
+# Add checkbox's for the apparel categories
 checkbox_vars = []
 for i, category in enumerate(apparel_categories):
     checkbox_var = tk.IntVar()
@@ -303,17 +409,22 @@ for i, category in enumerate(apparel_categories):
     checkbox = tk.Checkbutton(root, text=checkbox_text, variable=checkbox_var)
     checkbox.grid(row=3 + i, column=0, padx=10, pady=5, sticky='w')
 
+# Add a "Player Color" checkbox below the existing checkboxes
+player_color_var = tk.IntVar()
+player_color_checkbox = tk.Checkbutton(root, text="Player Color", variable=player_color_var)
+player_color_checkbox.grid(row=len(apparel_categories) + 3, column=0, padx=10, pady=5, sticky='w')
+
+# New code for the Physgun Color checkbox
+physgun_color_var = tk.IntVar()
+physgun_color_checkbox = tk.Checkbutton(root, text="Physgun Color", variable=physgun_color_var)
+physgun_color_checkbox.grid(row=len(apparel_categories) + 4, column=0, padx=10, pady=5, sticky='w')
+
 # Create and pack the customize buttons
 customize_buttons = []
 for i, category in enumerate(apparel_categories):
     customize_button = tk.Button(root, text="Customize", command=lambda c=category: customize_apparel(c))
     customize_button.grid(row=3 + i, column=1, padx=10, pady=5, sticky='w')
     customize_buttons.append(customize_button)
-
-
-# Create and pack the open customization window button
-open_customization_window_button = tk.Button(root, text="Open Customization Window", command=open_customization_windows)
-open_customization_window_button.grid(row=8, column=0, columnspan=2, padx=10, pady=5)
 
 # Initialize the running flag
 running_flag = threading.Event()

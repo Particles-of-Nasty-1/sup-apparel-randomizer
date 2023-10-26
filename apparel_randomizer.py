@@ -88,7 +88,11 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
 
     # Modify the second line
     lines[0] = f'rp setapparel {last_numbers}\n'
-    lines[1] = f'rp playercolor {random_numbers_str}\n'
+
+    if random_numbers == "" :
+        lines[1] = f' '
+    else: 
+        lines[1] = f'rp playercolor {random_numbers_str}\n'
 
     # Write the modified lines back to the file
     with open(output_path, 'w') as file:
@@ -275,9 +279,13 @@ def update_output_directory():
 
 # Function to generate random numbers
 def generate_numbers():
-    # Generate 3 random numbers between 0.000000 and 1.000000
-    random_numbers = [random.uniform(0, 1) for _ in range(3)]
-    return random_numbers
+    if player_color_var.get() == 1:
+        # Generate 3 random numbers between 0.000000 and 1.000000
+        random_numbers = [random.uniform(0, 1) for _ in range(3)]
+        return random_numbers
+    else:
+        random_numbers = ""
+        return random_numbers
 
     
 # Set the geometry

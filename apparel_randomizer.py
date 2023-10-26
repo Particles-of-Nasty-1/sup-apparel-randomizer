@@ -81,9 +81,6 @@ def press_f9_key():
 def run_script():
     global categories_order, last_selected, config
 
-    # Load the configuration from the JSON file
-    config = load_config('config.json')
-
     # Extract configuration values
     output_directory = config['output_directory'] + '\\garrysmod\\cfg'
     output_filename = config['output_filename']
@@ -227,14 +224,6 @@ def open_customization_windows():
         if checkbox_vars[i].get() == 1:
             customize_apparel(list_filename)
 
-# Function to load configuration from a JSON file
-def load_config(filename):
-    try:
-        with open(filename, 'r') as config_file:
-            return json.load(config_file)
-    except FileNotFoundError:
-        return {}
-
 # Function to update time_delay_seconds
 def update_time_delay():
     global time_delay_seconds
@@ -263,9 +252,6 @@ def update_output_directory():
 
 # Set the geometry
 root.geometry("400x285")
-
-# Load the configuration from the JSON file at the beginning of the script
-config = load_config('config.json')
 
 # Create and pack the start button
 start_button = tk.Button(root, text="Start", command=start_script)
@@ -309,11 +295,6 @@ for i, category in enumerate(apparel_categories):
     customize_button = tk.Button(root, text="Customize", command=lambda c=category: customize_apparel(c))
     customize_button.grid(row=3 + i, column=1, padx=10, pady=5, sticky='w')
     customize_buttons.append(customize_button)
-
-
-# Create and pack the open customization window button
-open_customization_window_button = tk.Button(root, text="Open Customization Window", command=open_customization_windows)
-open_customization_window_button.grid(row=8, column=0, columnspan=2, padx=10, pady=5)
 
 # Initialize the running flag
 running_flag = threading.Event()

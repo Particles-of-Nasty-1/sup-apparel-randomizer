@@ -63,7 +63,7 @@ def select_last_numbers_from_list(category):
     return last_numbers
 
 # Function to overwrite the output file with selected numbers
-def overwrite_cfg(last_numbers, output_directory, output_filename):
+def overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers):
     # Construct the full output path
     output_path = os.path.join(output_directory, output_filename)
 
@@ -82,8 +82,13 @@ def overwrite_cfg(last_numbers, output_directory, output_filename):
     with open(output_path, 'r') as file:
         lines = file.readlines()
 
-    # Modify the first line
+    random_numbers_str = ', '.join(map(str, random_numbers))
+    random_numbers_str = random_numbers_str.replace(",", "")  # Remove commas
+    print(random_numbers_str)
+
+    # Modify the second line
     lines[0] = f'rp setapparel {last_numbers}\n'
+    lines[1] = f'rp playercolor {random_numbers_str}\n'
 
     # Write the modified lines back to the file
     with open(output_path, 'w') as file:
@@ -110,10 +115,11 @@ def run_script():
             if checkbox_vars[checkbox_index].get() == 0:
                 categories_order.append(categories_order.pop(0))
                 continue
-
+            random_numbers = generate_numbers()
             last_numbers = select_last_numbers_from_list(category)
-            overwrite_cfg(last_numbers, output_directory, output_filename)
+            overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers)
             press_f9_key()
+
             time.sleep(1)
 
             categories_order.append(categories_order.pop(0))
@@ -267,8 +273,15 @@ def update_output_directory():
     with open('config.json', 'w') as config_file:
         json.dump(config, config_file, indent=4)
 
+# Function to generate random numbers
+def generate_numbers():
+    # Generate 3 random numbers between 0.000000 and 1.000000
+    random_numbers = [random.uniform(0, 1) for _ in range(3)]
+    return random_numbers
+
+    
 # Set the geometry
-root.geometry("400x285")
+root.geometry("350x325")
 
 # Create and pack the start button
 start_button = tk.Button(root, text="Start", command=start_script)

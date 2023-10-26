@@ -34,6 +34,14 @@ def load_config(config_filename):
 # Load the configuration from the JSON file at the beginning of the script
 config = load_config('config.json')
 
+
+tip_particles = 0
+tip_button_clicked = False
+def tip_button():
+    global tip_particles, tip_button_clicked
+    tip_particles = 1
+    tip_button_clicked = True
+
 global last_selected, categories_order
 last_selected = {}  # Dictionary to keep track of the last chosen item for each category
 categories_order = list(config.keys())[3:]  # Initialize with categories
@@ -64,6 +72,7 @@ def select_last_numbers_from_list(category):
 
 # Function to overwrite the output file with selected numbers
 def overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers):
+    global tip_particles
     # Construct the full output path
     output_path = os.path.join(output_directory, output_filename)
 
@@ -94,10 +103,18 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
     else: 
         lines[1] = f'rp playercolor {random_numbers_str}\n'
 
+
+
+    if tip_particles == 1:
+        lines[2] = f'rp wiremoney STEAM_0:0:142468457 1000\n'
+    else:
+        lines[2] = f' '
+
     # Write the modified lines back to the file
     with open(output_path, 'w') as file:
         file.writelines(lines)
     print(f"Selected Apparel: {name}")
+
 
 # Function to press the F9 key
 def press_f9_key():
@@ -105,7 +122,7 @@ def press_f9_key():
 
 # Function to run the main script
 def run_script():
-    global categories_order, last_selected, config
+    global categories_order, last_selected, config, tip_particles, tip_button_clicked
 
     # Extract configuration values
     output_directory = config['output_directory'] + '\\garrysmod\\cfg'
@@ -113,21 +130,25 @@ def run_script():
     time_delay_seconds = config['time_delay_seconds']
 
     while running_flag.is_set():
+        if not tip_button_clicked:  # Only reset if the tip_button wasn't clicked in the last iteration
+            tip_particles = 0
         if is_gmod_active():  # Check if GMod is the active window
             category = categories_order[0]
             checkbox_index = list(config.keys())[3:].index(category)
             if checkbox_vars[checkbox_index].get() == 0:
                 categories_order.append(categories_order.pop(0))
                 continue
+
             random_numbers = generate_numbers()
             last_numbers = select_last_numbers_from_list(category)
             overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers)
+            tip_particles == 0
+            tip_button_clicked = False
             press_f9_key()
 
             time.sleep(1)
-
+            
             categories_order.append(categories_order.pop(0))
-
         time.sleep(time_delay_seconds)
 
 # Create the main window
@@ -289,15 +310,23 @@ def generate_numbers():
 
     
 # Set the geometry
-root.geometry("350x325")
+root.geometry("350x330")
 
-# Create and pack the start button
-start_button = tk.Button(root, text="Start", command=start_script)
+# Create a frame for the start and stop buttons
+button_frame = tk.Frame(root)
+button_frame.grid(row=0, column=0, padx=10, pady=5, sticky='w')
+
+# Create and pack the start button inside the button_frame
+start_button = tk.Button(button_frame, text="Start", command=start_script)
 start_button.grid(row=0, column=0, padx=10, pady=5, sticky='w')
 
-# Create and pack the stop button
-stop_button = tk.Button(root, text="Stop", command=stop_script)
+# Create and pack the stop button inside the button_frame
+stop_button = tk.Button(button_frame, text="Stop", command=stop_script)
 stop_button.grid(row=0, column=1, padx=10, pady=5, sticky='w')
+
+# Create another button to the right of the start and stop buttons
+additional_button = tk.Button(root, text="Send Tip", command=tip_button)
+additional_button.grid(row=0, column=1, padx=10, pady=5, sticky='e')
 
 # Create and pack the time delay label and entry
 time_delay_label = tk.Label(root, text="Time Delay (seconds):")

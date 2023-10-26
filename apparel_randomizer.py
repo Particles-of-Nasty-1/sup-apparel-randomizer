@@ -95,20 +95,20 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
     random_numbers_str = random_numbers_str.replace(",", "")  # Remove commas
     print(random_numbers_str)
 
-    random_numbers_str2 = ', '.join(map(str, random_numbers))
+    random_numbers_str2 = ', '.join(map(str, random_numbers2))
     random_numbers_str2 = random_numbers_str2.replace(",", "")  # Remove commas
     print(random_numbers_str2)
 
     # Modify the second line
     lines[0] = f'rp setapparel {last_numbers}\n'
 
-    if random_numbers == "" :
-        lines[1] = f' '
+    if random_numbers == "echo\n" :
+        lines[1] = f'echo\n'
     else: 
         lines[1] = f'rp playercolor {random_numbers_str}\n'
 
-    if random_numbers2 == "" :
-        lines[2] = f' '
+    if random_numbers2 == "echo\n" :
+        lines[2] = f'echo\n'
     else: 
         lines[2] = f'rp physcolor {random_numbers_str2}\n'
 
@@ -147,9 +147,16 @@ def run_script():
             if checkbox_vars[checkbox_index].get() == 0:
                 categories_order.append(categories_order.pop(0))
                 continue
+            
+            if player_color_var.get() == 1:
+                random_numbers = generate_numbers()
+            else:
+                random_numbers = "echo\n"
 
-            random_numbers = generate_numbers()
-            random_numbers2 = generate_numbers()
+            if physgun_color_var.get() == 1: 
+                random_numbers2 = generate_numbers2()
+            else:
+                random_numbers2 = "echo\n"
             last_numbers = select_last_numbers_from_list(category)
             overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2)
             tip_particles == 0
@@ -310,20 +317,16 @@ def update_output_directory():
 
 # Function to generate random numbers
 def generate_numbers():
-    if player_color_var.get() == 1:
         # Generate 3 random numbers between 0.000000 and 1.000000
         random_numbers = [random.uniform(0, 1) for _ in range(3)]
         return random_numbers
-    else:
-        random_numbers = " "
-        return random_numbers
-    if physgun_color_var.get() == 1:
+
+    
+def generate_numbers2():
         # Generate 3 random numbers between 0.000000 and 1.000000
         random_numbers2 = [random.uniform(0, 1) for _ in range(3)]
         return random_numbers2
-    else:
-        random_numbers2 = " "
-        return random_numbers2
+
         
 # Set the geometry
 root.geometry("350x370")

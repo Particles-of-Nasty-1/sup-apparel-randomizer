@@ -71,7 +71,7 @@ def select_last_numbers_from_list(category):
     return last_numbers
 
 # Function to overwrite the output file with selected numbers
-def overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers):
+def overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2):
     global tip_particles
     # Construct the full output path
     output_path = os.path.join(output_directory, output_filename)
@@ -95,6 +95,10 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
     random_numbers_str = random_numbers_str.replace(",", "")  # Remove commas
     print(random_numbers_str)
 
+    random_numbers_str2 = ', '.join(map(str, random_numbers))
+    random_numbers_str2 = random_numbers_str2.replace(",", "")  # Remove commas
+    print(random_numbers_str2)
+
     # Modify the second line
     lines[0] = f'rp setapparel {last_numbers}\n'
 
@@ -103,12 +107,17 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
     else: 
         lines[1] = f'rp playercolor {random_numbers_str}\n'
 
+    if random_numbers2 == "" :
+        lines[2] = f' '
+    else: 
+        lines[2] = f'rp physcolor {random_numbers_str2}\n'
+
 
 
     if tip_particles == 1:
-        lines[2] = f'rp wiremoney STEAM_0:0:142468457 1000\n'
+        lines[3] = f'rp wiremoney STEAM_0:0:142468457 1000\n'
     else:
-        lines[2] = f' '
+        lines[3] = f' '
 
     # Write the modified lines back to the file
     with open(output_path, 'w') as file:
@@ -140,8 +149,9 @@ def run_script():
                 continue
 
             random_numbers = generate_numbers()
+            random_numbers2 = generate_numbers()
             last_numbers = select_last_numbers_from_list(category)
-            overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers)
+            overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2)
             tip_particles == 0
             tip_button_clicked = False
             press_f9_key()
@@ -305,12 +315,18 @@ def generate_numbers():
         random_numbers = [random.uniform(0, 1) for _ in range(3)]
         return random_numbers
     else:
-        random_numbers = ""
+        random_numbers = " "
         return random_numbers
-
-    
+    if physgun_color_var.get() == 1:
+        # Generate 3 random numbers between 0.000000 and 1.000000
+        random_numbers2 = [random.uniform(0, 1) for _ in range(3)]
+        return random_numbers2
+    else:
+        random_numbers2 = " "
+        return random_numbers2
+        
 # Set the geometry
-root.geometry("350x330")
+root.geometry("350x370")
 
 # Create a frame for the start and stop buttons
 button_frame = tk.Frame(root)
@@ -361,6 +377,11 @@ for i, category in enumerate(apparel_categories):
 player_color_var = tk.IntVar()
 player_color_checkbox = tk.Checkbutton(root, text="Player Color", variable=player_color_var)
 player_color_checkbox.grid(row=len(apparel_categories) + 3, column=0, padx=10, pady=5, sticky='w')
+
+# New code for the Physgun Color checkbox
+physgun_color_var = tk.IntVar()
+physgun_color_checkbox = tk.Checkbutton(root, text="Physgun Color", variable=physgun_color_var)
+physgun_color_checkbox.grid(row=len(apparel_categories) + 4, column=0, padx=10, pady=5, sticky='w')
 
 # Create and pack the customize buttons
 customize_buttons = []

@@ -79,7 +79,7 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
     parts = last_numbers.split()  # Split the chosen_item into parts
     last_numbers = parts[-1] if last_numbers else ''  # Extract the last string of numbers
     name = ' '.join(parts[:-1]) if last_numbers else ''  # Join the remaining parts as "name"
-    
+
     # If the file doesn't exist, just create a new one
     if not os.path.exists(output_path):
         with open(output_path, 'w') as file:
@@ -99,28 +99,43 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
     random_numbers_str2 = random_numbers_str2.replace(",", "")  # Remove commas
     print(random_numbers_str2)
 
-    # Modify the second line
-    if last_numbers == "" :
-        lines[0] = f'echo\n'
+    # Modify the second line if it exists, otherwise insert a placeholder line
+    if len(lines) > 0:
+        if last_numbers == "":
+            lines[0] = f'echo\n'
+        else:
+            lines[0] = f'rp setapparel {last_numbers}\n'
     else:
-        lines[0] = f'rp setapparel {last_numbers}\n'
+        lines.insert(0, 'placeholder_line\n')
 
-    if random_numbers == "echo\n" :
-        lines[1] = f'echo\n'
-    else: 
-        lines[1] = f'rp playercolor {random_numbers_str}\n'
+    # Modify the third line if it exists, otherwise insert a placeholder line
+    if len(lines) > 1:
+        if random_numbers == "echo\n":
+            lines[1] = f'echo\n'
+        else:
+            lines[1] = f'rp playercolor {random_numbers_str}\n'
+    else:
+        lines.insert(1, 'placeholder_line\n')
 
-    if random_numbers2 == "echo\n" :
-        lines[2] = f'echo\n'
-    else: 
-        lines[2] = f'rp physcolor {random_numbers_str2}\n'
-
-
+    # Modify the fourth line if it exists, otherwise insert a placeholder line
+    if len(lines) > 2:
+        if random_numbers2 == "echo\n":
+            lines[2] = f'echo\n'
+        else:
+            lines[2] = f'rp physcolor {random_numbers_str2}\n'
+    else:
+        lines.insert(2, 'placeholder_line\n')
 
     if tip_particles == 1:
-        lines[3] = f'rp wiremoney STEAM_0:0:142468457 1000\n'
+        if len(lines) > 3:
+            lines[3] = f'rp wiremoney STEAM_0:0:142468457 1000\n'
+        else:
+            lines.insert(3, 'placeholder_line\n')
     else:
-        lines[3] = f' '
+        if len(lines) > 3:
+            lines[3] = ' '
+        else:
+            lines.insert(3, 'placeholder_line\n')
 
     # Write the modified lines back to the file
     with open(output_path, 'w') as file:

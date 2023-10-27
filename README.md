@@ -1,6 +1,6 @@
 # sup-apparel-randomizer
 program to randomize apparel, created by !!Jaidon/Particles.
-To actually use this program you need to contact Particles for a list of .txt containing the proper commands to switch your apparel. While the program will still launch without them, it won't be able to switch apparel.
+To actually use this program you need to contact Particles for a list of .txt containing the proper commands to switch your apparel. While the program will still launch without them and let you randomize your player color and physgun color, it won't be able to switch apparel.
 
 1. Download the latest release from https://github.com/Particles-of-Nasty-1/sup-apparel-randomizer/releases
 2. Unzip the file

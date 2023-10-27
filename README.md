@@ -8,5 +8,7 @@ To actually use this program you need to contact Particles for a list of .txt co
 4. In the window that pops up set the path to your gmod.exe . By default its set to C:\SteamLibrary\steamapps\common\GarrysMod but you may need to change this if your game is located elsewhere.
 5. In GMOD open your console and paste this command (check Controls in settings for console bind keys)
   bind F9 "exec apparel"
-6. Click Start
-7. Profit
+6. Click customize next to the apparel category you wish to use, select the apparel you have, then click update.
+7. Click the checkbox next to the apparel categories you wish to use.
+8. Click Start
+9. Profit

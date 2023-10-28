@@ -53,7 +53,6 @@ random.shuffle(categories_order)  # Shuffle the initial order
 
 # Function to update a key in the config dictionary and save to JSON file
 def update_config(key, value):
-    global config  # Assuming config is defined globally
 
     # Update the value in the config dictionary
     config[key] = value
@@ -278,16 +277,6 @@ def open_customization_windows():
         if checkbox_vars[i].get() == 1:
             customize_apparel(list_filename)
 
-# Update time_delay_seconds
-def update_time_delay():
-    new_time_delay = int(time_delay_entry.get())
-    update_config('time_delay_seconds', new_time_delay)
-
-# Update output_directory
-def update_output_directory():
-    new_output_directory = output_directory_entry.get()
-    update_config('output_directory', new_output_directory)
-
 # Function to generate random numbers
 def generate_numbers():
         # Generate 3 random numbers between 0.000000 and 1.000000
@@ -320,7 +309,7 @@ time_delay_entry = tk.Entry(root)
 time_delay_entry.grid(row=1, column=1, padx=10, pady=5, sticky='w')
 # Populate time_delay_entry with the value from the config (if available)
 time_delay_entry.insert(0, str(config.get('time_delay_seconds', "60")))
-update_time_delay_button = tk.Button(root, text="Update", command=update_time_delay)
+update_time_delay_button = tk.Button(root, text="Update", command=lambda: update_config('time_delay_seconds', time_delay_entry.get()))
 update_time_delay_button.grid(row=1, column=2, padx=10, pady=5, sticky='w')
 
 # Create and pack the output directory label and entry
@@ -330,7 +319,7 @@ output_directory_entry = tk.Entry(root)
 output_directory_entry.grid(row=2, column=1, padx=10, pady=5, sticky='w')
 # Populate output_directory_entry with the value from the config (if available)
 output_directory_entry.insert(0, config.get('output_directory', "C:\\SteamLibrary\\steamapps\\common\\GarrysMod"))
-update_output_directory_button = tk.Button(root, text="Update", command=update_output_directory)
+update_output_directory_button = tk.Button(root, text="Update", command=lambda: update_config('output_directory', output_directory_entry.get()))
 update_output_directory_button.grid(row=2, column=2, padx=10, pady=5, sticky='w')
 
 # Add checkbox's for the apparel categories

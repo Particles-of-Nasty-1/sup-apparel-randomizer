@@ -18,21 +18,25 @@ def is_gmod_active():
 # Define the apparel categories
 apparel_categories = ['hats', 'masks', 'glasses', 'pets', 'scarves']
 
-# Function to load configuration from a JSON file
-def load_config(config_filename):
+def load_file(filename, file_type="text"):
     try:
-        with open(config_filename, 'r') as config_file:
-            config = json.load(config_file)
-        return config
+        with open(filename, 'r') as file:
+            if file_type == "json":
+                data = json.load(file)
+            elif file_type == "text":
+                data = file.read().splitlines()
+            else:
+                raise ValueError("Invalid file_type. Use 'json' or 'text'.")
+        return data
     except FileNotFoundError:
-        print(f"Config file '{config_filename}' not found.")
+        print(f"File '{filename}' not found.")
         exit(1)
     except json.JSONDecodeError:
-        print(f"Error decoding JSON in '{config_filename}'. Please check the format.")
+        print(f"Error decoding JSON in '{filename}'. Please check the format.")
         exit(1)
 
 # Load the configuration from the JSON file at the beginning of the script
-config = load_config('config.json')
+config = load_file('config.json', file_type="json")
 
 
 tip_particles = 0
@@ -46,6 +50,17 @@ global last_selected, categories_order
 last_selected = {}  # Dictionary to keep track of the last chosen item for each category
 categories_order = list(config.keys())[3:]  # Initialize with categories
 random.shuffle(categories_order)  # Shuffle the initial order
+
+# Function to update a key in the config dictionary and save to JSON file
+def update_config(key, value):
+    global config  # Assuming config is defined globally
+
+    # Update the value in the config dictionary
+    config[key] = value
+    
+    # Save the updated config back to the JSON file
+    with open('config.json', 'w') as config_file:
+        json.dump(config, config_file, indent=4)
 
 # Function to select the last string of numbers from a list line
 def select_last_numbers_from_list(category):
@@ -91,13 +106,9 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
     with open(output_path, 'r') as file:
         lines = file.readlines()
 
-    random_numbers_str = ', '.join(map(str, random_numbers))
-    random_numbers_str = random_numbers_str.replace(",", "")  # Remove commas
-    print(random_numbers_str)
+    print(random_numbers)
 
-    random_numbers_str2 = ', '.join(map(str, random_numbers2))
-    random_numbers_str2 = random_numbers_str2.replace(",", "")  # Remove commas
-    print(random_numbers_str2)
+    print(random_numbers2)
 
     # Modify the second line if it exists, otherwise insert a placeholder line
     if len(lines) > 0:
@@ -113,7 +124,7 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
         if random_numbers == "echo\n":
             lines[1] = f'echo\n'
         else:
-            lines[1] = f'rp playercolor {random_numbers_str}\n'
+            lines[1] = f'rp playercolor {random_numbers}\n'
     else:
         lines.insert(1, 'placeholder_line\n')
 
@@ -122,7 +133,7 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
         if random_numbers2 == "echo\n":
             lines[2] = f'echo\n'
         else:
-            lines[2] = f'rp physcolor {random_numbers_str2}\n'
+            lines[2] = f'rp physcolor {random_numbers2}\n'
     else:
         lines.insert(2, 'placeholder_line\n')
 
@@ -181,7 +192,7 @@ def run_script():
                     random_numbers = "echo\n"
 
                 if physgun_color_var.get() == 1: 
-                    random_numbers2 = generate_numbers2()
+                    random_numbers2 = generate_numbers()
                 else:
                     random_numbers2 = "echo\n"
 
@@ -238,22 +249,11 @@ def customize_apparel(category):
         for idx, var in enumerate(checkbutton_vars):
             if var.get():
                 selected_items.append(items[idx])
-        config[category] = selected_items
-        with open('config.json', 'w') as config_file:
-            json.dump(config, config_file, indent=4)
+        update_config(category, selected_items)
 
-        # Function to load text from a file
-    def load_text_file(filename):
-        try:
-            with open(filename, 'r') as file:
-                lines = file.read().splitlines()
-            return lines
-        except FileNotFoundError:
-            print(f"File '{filename}' not found.")
-            exit(1)
     # Load the contents of the specified .txt file
     list_path = os.path.join(os.path.dirname(__file__), category + '.txt')
-    lines = load_text_file(list_path)
+    lines = load_file(list_path, file_type="text")
     items = lines
     display_items = [" ".join(item.split()[:-1]) for item in items]  # Exclude the last string of numbers
     
@@ -322,44 +322,23 @@ def open_customization_windows():
         if checkbox_vars[i].get() == 1:
             customize_apparel(list_filename)
 
-# Function to update time_delay_seconds
+# Update time_delay_seconds
 def update_time_delay():
-    global time_delay_seconds
     new_time_delay = int(time_delay_entry.get())
-    time_delay_seconds = new_time_delay
-    
-    # Update the value in the config dictionary
-    config['time_delay_seconds'] = new_time_delay
-    
-    # Save the updated config back to the JSON file
-    with open('config.json', 'w') as config_file:
-        json.dump(config, config_file, indent=4)
+    update_config('time_delay_seconds', new_time_delay)
 
-# Function to update output_directory
+# Update output_directory
 def update_output_directory():
-    global output_directory
     new_output_directory = output_directory_entry.get()
-    output_directory = new_output_directory
-    
-    # Update the value in the config dictionary
-    config['output_directory'] = new_output_directory
-    
-    # Save the updated config back to the JSON file
-    with open('config.json', 'w') as config_file:
-        json.dump(config, config_file, indent=4)
+    update_config('output_directory', new_output_directory)
 
 # Function to generate random numbers
 def generate_numbers():
         # Generate 3 random numbers between 0.000000 and 1.000000
         random_numbers = [random.uniform(0, 1) for _ in range(3)]
-        return random_numbers
-
-    
-def generate_numbers2():
-        # Generate 3 random numbers between 0.000000 and 1.000000
-        random_numbers2 = [random.uniform(0, 1) for _ in range(3)]
-        return random_numbers2
-
+        random_numbers_str = ', '.join(map(str, random_numbers))
+        random_numbers_str = random_numbers_str.replace(",", "")  # Remove commas
+        return random_numbers_str
         
 # Set the geometry
 root.geometry("350x370")

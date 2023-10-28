@@ -65,24 +65,19 @@ def update_config(key, value):
 def select_last_numbers_from_list(category):
     items = config.get(category, [])
     
-    # If there's only one item, always select it
-    if len(items) == 1:
-        chosen_item = items[0]
+    # Exclude the previously selected items for this category
+    if category in last_selected:
+        items = [item for item in items if item != last_selected[category]]
+            
+    # Now choose from the remaining items
+    if items:
+        chosen_item = random.choice(items)
     else:
-        # Exclude the last selected item for this category
-        if category in last_selected:
-            items = [item for item in items if item != last_selected[category]]
+        chosen_item = ''
 
-        # Now choose from the remaining items
-        if items:
-            chosen_item = random.choice(items)
-        else:
-            chosen_item = ''
-
-    last_numbers = chosen_item
     last_selected[category] = chosen_item  # Update the last selected item for this category
         
-    return last_numbers
+    return chosen_item
 
 # Function to overwrite the output file with selected numbers
 def overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2):
@@ -122,7 +117,7 @@ def run_script():
     # Extract configuration values
     output_directory = config['output_directory'] + '\\garrysmod\\cfg'
     output_filename = config['output_filename']
-    time_delay_seconds = config['time_delay_seconds']
+    time_delay_seconds = int(config['time_delay_seconds'])
 
     while running_flag.is_set():
         # Get the list of selected categories
@@ -139,33 +134,53 @@ def run_script():
         if not selected_categories:
             selected_categories = ['dummy']  # A dummy category to run the loop once
 
+        if player_color_var.get() == 1:
+            random_numbers = generate_numbers()
+        else:
+            random_numbers = "echo"
+
+        if physgun_color_var.get() == 1: 
+            random_numbers2 = generate_numbers()
+        else:
+            random_numbers2 = "echo"
+
+        first_apparel_processed = False
         for category in selected_categories:
             if not tip_button_clicked:  # Only reset if the tip_button wasn't clicked in the last iteration
                 tip_particles = 0
+
             if is_gmod_active():  # Check if GMod is the active window
-                if player_color_var.get() == 1:
-                    random_numbers = generate_numbers()
+                if player_color_var.get():
+                    if player_color_every_switch_var.get() or not first_apparel_processed:
+                        random_numbers = generate_numbers()
+                    else:
+                        random_numbers = "echo"
                 else:
                     random_numbers = "echo"
 
-                if physgun_color_var.get() == 1: 
-                    random_numbers2 = generate_numbers()
+                if physgun_color_var.get():
+                    if physgun_color_every_switch_var.get() or not first_apparel_processed:
+                        random_numbers2 = generate_numbers()
+                    else:
+                        random_numbers2 = "echo"
                 else:
                     random_numbers2 = "echo"
-
+                
                 # Only fetch apparel if the category isn't 'dummy'
                 if category != 'dummy':
                     last_numbers = select_last_numbers_from_list(category)
                     overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2)
+                    tip_particles = 0
+                    press_f9_key()  # Press the button after processing each apparel item
+                    time.sleep(1)  # Wait for a bit after selecting each apparel item
+                    first_apparel_processed = True
                 else:
                     # If no apparel category is selected, just update colors
                     overwrite_cfg('', output_directory, output_filename, random_numbers, random_numbers2)
+                    tip_particles = 0
+                    press_f9_key()  # Press the button after updating colors
 
-                tip_particles == 0
                 tip_button_clicked = False
-                press_f9_key()
-
-                time.sleep(1)  # Wait for a bit after selecting from each category
 
         time.sleep(time_delay_seconds)  # Rest after processing all selected categories
 
@@ -340,6 +355,16 @@ player_color_checkbox.grid(row=len(apparel_categories) + 3, column=0, padx=10, p
 physgun_color_var = tk.IntVar()
 physgun_color_checkbox = tk.Checkbutton(root, text="Physgun Color", variable=physgun_color_var)
 physgun_color_checkbox.grid(row=len(apparel_categories) + 4, column=0, padx=10, pady=5, sticky='w')
+
+# Checkbox for Player Color's Every Switch
+player_color_every_switch_var = tk.IntVar()
+player_color_every_switch_checkbox = tk.Checkbutton(root, text="Every Switch", variable=player_color_every_switch_var)
+player_color_every_switch_checkbox.grid(row=len(apparel_categories) + 3, column=1, padx=10, pady=5, sticky='w')
+
+# Checkbox for Physgun Color's Every Switch
+physgun_color_every_switch_var = tk.IntVar()
+physgun_color_every_switch_checkbox = tk.Checkbutton(root, text="Every Switch", variable=physgun_color_every_switch_var)
+physgun_color_every_switch_checkbox.grid(row=len(apparel_categories) + 4, column=1, padx=10, pady=5, sticky='w')
 
 # Create and pack the customize buttons
 customize_buttons = []

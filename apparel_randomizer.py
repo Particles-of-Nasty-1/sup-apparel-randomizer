@@ -335,10 +335,8 @@ def update_output_directory():
 # Function to generate random numbers
 def generate_numbers():
         # Generate 3 random numbers between 0.000000 and 1.000000
-        random_numbers = [random.uniform(0, 1) for _ in range(3)]
-        random_numbers_str = ', '.join(map(str, random_numbers))
-        random_numbers_str = random_numbers_str.replace(",", "")  # Remove commas
-        return random_numbers_str
+        random_numbers = ' '.join(map(str, [random.uniform(0, 1) for _ in range(3)]))
+        return random_numbers
         
 # Set the geometry
 root.geometry("350x370")

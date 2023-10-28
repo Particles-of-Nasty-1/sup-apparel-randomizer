@@ -212,6 +212,10 @@ def stop_script():
 def customize_apparel(category):
     customize_window = tk.Toplevel(root)
     customize_window.title(f"Customize {category}")
+    
+    if category == "Presets":  # Special handling for Presets
+        # For now, just an empty window. Add any custom behavior here.
+        return
 
     # Function to update the configuration when customizing
     def update_customization():
@@ -299,7 +303,7 @@ def generate_numbers():
         return random_numbers
         
 # Set the geometry
-root.geometry("350x370")
+root.geometry("350x405")
 
 # Create a frame for the start and stop buttons
 button_frame = tk.Frame(root)
@@ -349,22 +353,31 @@ for i, category in enumerate(apparel_categories):
 # Add a "Player Color" checkbox below the existing checkboxes
 player_color_var = tk.IntVar()
 player_color_checkbox = tk.Checkbutton(root, text="Player Color", variable=player_color_var)
-player_color_checkbox.grid(row=len(apparel_categories) + 3, column=0, padx=10, pady=5, sticky='w')
+player_color_checkbox.grid(row=len(apparel_categories) + 4, column=0, padx=10, pady=5, sticky='w')
 
 # New code for the Physgun Color checkbox
 physgun_color_var = tk.IntVar()
 physgun_color_checkbox = tk.Checkbutton(root, text="Physgun Color", variable=physgun_color_var)
-physgun_color_checkbox.grid(row=len(apparel_categories) + 4, column=0, padx=10, pady=5, sticky='w')
+physgun_color_checkbox.grid(row=len(apparel_categories) + 5, column=0, padx=10, pady=5, sticky='w')
+
+# New code for the Presets checkbox
+presets_var = tk.IntVar()
+presets_checkbox = tk.Checkbutton(root, text="Presets", variable=presets_var)
+presets_checkbox.grid(row=len(apparel_categories) + 3, column=0, padx=10, pady=5, sticky='w')
+
+# Add the "Customize" button to the right of the "Presets" checkbox
+customize_presets_button = tk.Button(root, text="Customize", command=lambda: customize_apparel("Presets"))
+customize_presets_button.grid(row=len(apparel_categories) + 3, column=1, padx=10, pady=5, sticky='w')
 
 # Checkbox for Player Color's Every Switch
 player_color_every_switch_var = tk.IntVar()
 player_color_every_switch_checkbox = tk.Checkbutton(root, text="Every Switch", variable=player_color_every_switch_var)
-player_color_every_switch_checkbox.grid(row=len(apparel_categories) + 3, column=1, padx=10, pady=5, sticky='w')
+player_color_every_switch_checkbox.grid(row=len(apparel_categories) + 4, column=1, padx=10, pady=5, sticky='w')
 
 # Checkbox for Physgun Color's Every Switch
 physgun_color_every_switch_var = tk.IntVar()
 physgun_color_every_switch_checkbox = tk.Checkbutton(root, text="Every Switch", variable=physgun_color_every_switch_var)
-physgun_color_every_switch_checkbox.grid(row=len(apparel_categories) + 4, column=1, padx=10, pady=5, sticky='w')
+physgun_color_every_switch_checkbox.grid(row=len(apparel_categories) + 5, column=1, padx=10, pady=5, sticky='w')
 
 # Create and pack the customize buttons
 customize_buttons = []

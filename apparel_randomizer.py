@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import simpledialog
 import threading
 import random
 import os
@@ -209,13 +210,12 @@ def stop_script():
     update_output_directory_button.config(state=tk.NORMAL)  # Enable the update output directory button
     
 # Function to open a customization window for a specific apparel
-def customize_apparel(category):
+def customize_apparel(category, exclude_select_all=False):
+    if category == "Presets":
+        customize_presets()
+        return
     customize_window = tk.Toplevel(root)
     customize_window.title(f"Customize {category}")
-    
-    if category == "Presets":  # Special handling for Presets
-        # For now, just an empty window. Add any custom behavior here.
-        return
 
     # Function to update the configuration when customizing
     def update_customization():
@@ -231,8 +231,6 @@ def customize_apparel(category):
     items = lines
     display_items = [" ".join(item.split()[:-1]) for item in items]  # Exclude the last string of numbers
     
-
-
     # Create a canvas and a scrollbar
     canvas = tk.Canvas(customize_window, width=300, height=400)
     scrollbar = tk.Scrollbar(customize_window, command=canvas.yview)
@@ -279,16 +277,27 @@ def customize_apparel(category):
     button_frame = tk.Frame(customize_window)
     button_frame.grid(row=2, column=0, columnspan=2, pady=10)
 
-    # Create Select All and Deselect All buttons inside the frame
-    select_all_button = tk.Button(button_frame, text="Select All", command=select_all)
-    select_all_button.grid(row=0, column=0, padx=5)
+    if not exclude_select_all:
+        # Create Select All and Deselect All buttons inside the frame
+        select_all_button = tk.Button(button_frame, text="Select All", command=select_all)
+        select_all_button.grid(row=0, column=0, padx=5)
+
+        deselect_all_button = tk.Button(button_frame, text="Deselect All", command=deselect_all)
+        deselect_all_button.grid(row=0, column=2, padx=5)
 
     # Place the Update button in the middle
     update_button = tk.Button(button_frame, text="Update", command=update_customization)
     update_button.grid(row=0, column=1, padx=5)
 
-    deselect_all_button = tk.Button(button_frame, text="Deselect All", command=deselect_all)
-    deselect_all_button.grid(row=0, column=2, padx=5)
+def handle_customize_preset():
+    customize_categories_window = tk.Toplevel(root)
+    customize_categories_window.title("Customize Categories")
+
+    categories = ["masks", "hats", "glasses", "pets", "scarves"]
+
+    for idx, category in enumerate(categories):
+        btn = tk.Button(customize_categories_window, text=category.capitalize(), command=lambda c=category: customize_apparel(c, exclude_select_all=True))
+        btn.grid(row=idx, column=0, pady=5, padx=10)
 
 # Function to create a customization window for each apparel
 def open_customization_windows():
@@ -302,6 +311,156 @@ def generate_numbers():
         random_numbers = ' '.join(map(str, [random.uniform(0, 1) for _ in range(3)]))
         return random_numbers
         
+def refresh_ui(json_path, frame, canvas, checkbuttons):
+    # Read the JSON file and update the UI
+    with open(json_path, 'r') as file:
+        data = json.load(file)
+        items = list(data.keys())
+
+    # Clear existing checkbuttons
+    for cb in checkbuttons:
+        cb.destroy()
+    
+    checkbutton_vars = []
+    selected_preset = tk.StringVar()
+
+    for idx, item in enumerate(items):
+        var = tk.IntVar()
+        checkbutton_vars.append(var)
+
+        def select_preset(i=item, cb_var=var, current_cb=None):
+            selected_preset.set(i)
+            for chk in checkbuttons:
+                if chk.winfo_exists():  # Check if the checkbutton still exists
+                    chk.configure(bg="white")
+            if current_cb and cb_var.get():
+                current_cb.configure(bg="blue")
+
+        cb = tk.Checkbutton(frame, text=item, variable=var)
+        cb.grid(row=idx, column=0, sticky='w')
+
+        # Bind the button-1 event and command after the cb is defined
+        cb.configure(command=lambda i=item, cb_var=var, current_cb=cb: select_preset(i, cb_var, current_cb))
+        cb.bind("<Button-1>", lambda event, i=item, cb_var=var, current_cb=cb: select_preset(i, cb_var, current_cb))
+
+        checkbuttons.append(cb)  # Keep track of checkbuttons
+
+    # Update canvas scrolling region after UI elements have been added
+    frame.update_idletasks()
+    canvas.config(scrollregion=canvas.bbox("all"))
+
+def add_preset(json_path, frame, canvas, checkbuttons):
+    with open(json_path, 'r') as file:
+        data = json.load(file)
+
+    # Create a Tkinter root window
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+
+    # Prompt the user for a custom preset name
+    new_preset_name = tk.simpledialog.askstring("Preset Name", "Enter a custom name for the preset:")
+
+    # Check if the user canceled the input dialog
+    if new_preset_name is None:
+        root.destroy()
+        return
+
+    # Ensure the new preset name is unique
+    counter = 1
+    while new_preset_name in data:
+        new_preset_name = f"{new_preset_name} ({counter})"
+        counter += 1
+
+    data[new_preset_name] = []
+
+    with open(json_path, 'w') as file:
+        json.dump(data, file, indent=4)
+
+    root.destroy()  # Close the Tkinter window
+
+    # Refresh the UI to reflect the changes
+    refresh_ui(json_path, frame, canvas, checkbuttons)
+
+def delete_selected_preset(json_path, selected_preset_name, frame, canvas, checkbuttons):
+    with open(json_path, 'r') as file:
+        data = json.load(file)
+
+    if selected_preset_name in data:
+        del data[selected_preset_name]
+
+        with open(json_path, 'w') as file:
+            json.dump(data, file, indent=4)
+
+    # Refresh the UI to reflect the changes
+    refresh_ui(json_path, frame, canvas, checkbuttons)
+
+def customize_presets():
+    customize_window = tk.Toplevel(root)
+    customize_window.title("Customize Presets")
+
+    list_path = os.path.join(os.path.dirname(__file__), 'Presets.json')
+    with open(list_path, 'r') as file:
+        data = json.load(file)
+        items = list(data.keys())
+
+    # Create a canvas and a scrollbar
+    canvas = tk.Canvas(customize_window, width=300, height=400)
+    scrollbar = tk.Scrollbar(customize_window, command=canvas.yview)
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    canvas.grid(row=1, column=0, sticky='nw')
+    scrollbar.grid(row=1, column=1, sticky='ns')
+
+    # Function to handle mouse wheel scrolling
+    def on_mousewheel(event):
+        canvas.yview_scroll(-1*(event.delta//120), "units")
+
+    # Bind the mouse wheel event to the canvas
+    canvas.bind_all("<MouseWheel>", on_mousewheel)
+
+    # Create a frame inside the canvas to put the checkbuttons
+    frame = tk.Frame(canvas)
+    canvas.create_window((0, 0), window=frame, anchor='nw')
+
+    checkbutton_vars = []
+    checkbuttons = []  # List to keep track of checkbutton widgets
+    selected_preset = tk.StringVar()
+
+    for idx, item in enumerate(items):
+        var = tk.IntVar()
+        checkbutton_vars.append(var)
+
+        def select_preset(i=item, cb_var=var, current_cb=None):
+            selected_preset.set(i)
+            for chk in checkbuttons:
+                if chk.winfo_exists():  # Check if the checkbutton still exists
+                    chk.configure(bg="white")
+            if current_cb and cb_var.get():
+                current_cb.configure(bg="blue")
+
+        cb = tk.Checkbutton(frame, text=item, variable=var)
+        cb.grid(row=idx, column=0, sticky='w')
+
+        # Bind the button-1 event and command after the cb is defined
+        cb.configure(command=lambda i=item, cb_var=var, current_cb=cb: select_preset(i, cb_var, current_cb))
+        cb.bind("<Button-1>", lambda event, i=item, cb_var=var, current_cb=cb: select_preset(i, cb_var, current_cb))
+        # Add a "Customize" button next to each preset name
+        customize_button = tk.Button(frame, text="Customize", command=handle_customize_preset)
+        customize_button.grid(row=idx, column=1, sticky='w', padx=5)
+
+        checkbuttons.append(cb)  # Keep track of checkbuttons
+
+    # Update canvas scrolling region after UI elements have been added
+    frame.update_idletasks()
+    canvas.config(scrollregion=canvas.bbox("all"))
+
+    # Add Preset and Delete Preset buttons
+    add_preset_button = tk.Button(customize_window, text="Add Preset", command=lambda: add_preset(list_path, frame, canvas, checkbuttons))
+    add_preset_button.grid(row=0, column=0, sticky='w', pady=10, padx=10)
+
+    delete_preset_button = tk.Button(customize_window, text="Delete Preset", command=lambda: delete_selected_preset(list_path, selected_preset.get(), frame, canvas, checkbuttons))
+    delete_preset_button.grid(row=0, column=1, sticky='w', pady=10, padx=10)
+
 # Set the geometry
 root.geometry("350x405")
 

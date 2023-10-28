@@ -16,7 +16,7 @@ def is_gmod_active():
     return False
 
 # Define the apparel categories
-apparel_categories = ['hats', 'masks', 'glasses', 'pets', 'scarves']
+apparel_categories = ['masks', 'hats', 'glasses', 'pets', 'scarves']
 
 def load_file(filename, file_type="text"):
     try:

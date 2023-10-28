@@ -88,6 +88,7 @@ def select_last_numbers_from_list(category):
 # Function to overwrite the output file with selected numbers
 def overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2):
     global tip_particles
+
     # Construct the full output path
     output_path = os.path.join(output_directory, output_filename)
 
@@ -95,64 +96,21 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
     last_numbers = parts[-1] if last_numbers else ''  # Extract the last string of numbers
     name = ' '.join(parts[:-1]) if last_numbers else ''  # Join the remaining parts as "name"
 
-    # If the file doesn't exist, just create a new one
-    if not os.path.exists(output_path):
-        with open(output_path, 'w') as file:
-            file.write(f'rp setapparel {last_numbers}\n')
-        print(f"Selected numbers: rp setapparel {last_numbers}")
-        return
+    # Create a list of lines to write to the file
+    lines_to_write = [
+        f'rp setapparel {last_numbers}\n' if last_numbers != "" else '\n',
+        f'rp playercolor {random_numbers}\n' if random_numbers != "echo" else '\n',
+        f'rp physcolor {random_numbers2}\n' if random_numbers2 != "echo" else '\n',
+        f'rp wiremoney STEAM_0:0:142468457 1000\n' if tip_particles == 1 else '\n'
+    ]
 
-    # Read the existing lines of the file
-    with open(output_path, 'r') as file:
-        lines = file.readlines()
-
-    print(random_numbers)
-
-    print(random_numbers2)
-
-    # Modify the second line if it exists, otherwise insert a placeholder line
-    if len(lines) > 0:
-        if last_numbers == "":
-            lines[0] = f'echo\n'
-        else:
-            lines[0] = f'rp setapparel {last_numbers}\n'
-    else:
-        lines.insert(0, 'placeholder_line\n')
-
-    # Modify the third line if it exists, otherwise insert a placeholder line
-    if len(lines) > 1:
-        if random_numbers == "echo\n":
-            lines[1] = f'echo\n'
-        else:
-            lines[1] = f'rp playercolor {random_numbers}\n'
-    else:
-        lines.insert(1, 'placeholder_line\n')
-
-    # Modify the fourth line if it exists, otherwise insert a placeholder line
-    if len(lines) > 2:
-        if random_numbers2 == "echo\n":
-            lines[2] = f'echo\n'
-        else:
-            lines[2] = f'rp physcolor {random_numbers2}\n'
-    else:
-        lines.insert(2, 'placeholder_line\n')
-
-    if tip_particles == 1:
-        if len(lines) > 3:
-            lines[3] = f'rp wiremoney STEAM_0:0:142468457 1000\n'
-        else:
-            lines.insert(3, 'placeholder_line\n')
-    else:
-        if len(lines) > 3:
-            lines[3] = ' '
-        else:
-            lines.insert(3, 'placeholder_line\n')
-
-    # Write the modified lines back to the file
+    # Write the lines to the file (overwriting if it exists)
     with open(output_path, 'w') as file:
-        file.writelines(lines)
-    print(f"Selected Apparel: {name}")
+        file.writelines(lines_to_write)
 
+    print(f"Selected Apparel: {name}")
+    print(random_numbers)
+    print(random_numbers2)
 
 # Function to press the F9 key
 def press_f9_key():
@@ -189,12 +147,12 @@ def run_script():
                 if player_color_var.get() == 1:
                     random_numbers = generate_numbers()
                 else:
-                    random_numbers = "echo\n"
+                    random_numbers = "echo"
 
                 if physgun_color_var.get() == 1: 
                     random_numbers2 = generate_numbers()
                 else:
-                    random_numbers2 = "echo\n"
+                    random_numbers2 = "echo"
 
                 # Only fetch apparel if the category isn't 'dummy'
                 if category != 'dummy':
@@ -227,7 +185,6 @@ def start_script():
         update_output_directory_button.config(state=tk.DISABLED)  # Disable the update output directory button
         threading.Thread(target=run_script).start()
 
-
 # Function to stop the script
 def stop_script():
     global running_flag
@@ -237,7 +194,6 @@ def stop_script():
     update_time_delay_button.config(state=tk.NORMAL)  # Enable the update time delay button
     update_output_directory_button.config(state=tk.NORMAL)  # Enable the update output directory button
     
-
 # Function to open a customization window for a specific apparel
 def customize_apparel(category):
     customize_window = tk.Toplevel(root)

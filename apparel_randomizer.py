@@ -223,7 +223,7 @@ def stop_script():
     update_output_directory_button.config(state=tk.NORMAL)  # Enable the update output directory button
     
 # Function to open a customization window for a specific apparel
-def customize_apparel(category, presets, exclude_select_all=False):
+def customize_apparel(category, presets, preset_name, exclude_select_all=False):
     customize_window = tk.Toplevel(root)
     customize_window.title(f"Customize {category}")
 
@@ -239,7 +239,7 @@ def customize_apparel(category, presets, exclude_select_all=False):
             update_config(category, selected_items)
         else:
             # Update the selected preset within presets_config
-            selected_preset = "Preset 1"  # Change this to the selected preset name
+            selected_preset = preset_name  # Change this to the selected preset name
             update_presets_config(selected_preset, category, selected_items)
 
     # Load the contents of the specified .txt file
@@ -279,7 +279,7 @@ def customize_apparel(category, presets, exclude_select_all=False):
                 cb.select()
     else:
         print("This is presets.json")
-        selected_preset = "Preset 1"  # Change this to the selected preset name
+        selected_preset = preset_name  # Change this to the selected preset name
         preset_category = presets_config.get(selected_preset, {}).get(category, [])
         for idx, item in enumerate(display_items):
             var = tk.IntVar()
@@ -324,7 +324,7 @@ def customize_apparel(category, presets, exclude_select_all=False):
 def open_customization_windows():
     for i, list_filename in enumerate(apparel_categories):
         if checkbox_vars[i].get() == 1:
-            customize_apparel(list_filename, 'False')
+            customize_apparel(list_filename, 'False', "")
 
 # Function to generate random numbers
 def generate_numbers():
@@ -392,7 +392,7 @@ def add_preset(json_path, frame, canvas, checkbuttons):
         new_preset_name = f"{new_preset_name} ({counter})"
         counter += 1
 
-    data[new_preset_name] = []
+    data[new_preset_name] = {}
 
     with open(json_path, 'w') as file:
         json.dump(data, file, indent=4)
@@ -465,8 +465,9 @@ def customize_presets():
         # Bind the button-1 event and command after the cb is defined
         cb.configure(command=lambda i=item, cb_var=var, current_cb=cb: select_preset(i, cb_var, current_cb))
         cb.bind("<Button-1>", lambda event, i=item, cb_var=var, current_cb=cb: select_preset(i, cb_var, current_cb))
-        # Add a "Customize" button next to each preset name
-        customize_button = tk.Button(frame, text="Customize", command=handle_customize_preset)
+
+        # Add a "Customize" button next to each preset name and pass the item (preset name) to the handler function
+        customize_button = tk.Button(frame, text="Customize", command=lambda i=item: handle_customize_preset(i))
         customize_button.grid(row=idx, column=1, sticky='w', padx=5)
 
         checkbuttons.append(cb)  # Keep track of checkbuttons
@@ -482,7 +483,7 @@ def customize_presets():
     delete_preset_button = tk.Button(customize_window, text="Delete Preset", command=lambda: delete_selected_preset(list_path, selected_preset.get(), frame, canvas, checkbuttons))
     delete_preset_button.grid(row=0, column=1, sticky='w', pady=10, padx=10)
 
-def handle_customize_preset():
+def handle_customize_preset(i):
         customize_categories_window = tk.Toplevel(root)
         customize_categories_window.title("")
         
@@ -501,7 +502,7 @@ def handle_customize_preset():
         
         for idx, category in enumerate(categories):
             btn = tk.Button(button_frame, text=category.capitalize(), width=button_width, 
-                            command=lambda c=category: customize_apparel(c, "True", exclude_select_all=True))
+                            command=lambda c=category: customize_apparel(c, "True", i, exclude_select_all=True))
             btn.grid(row=idx, column=0, pady=5, padx=10)
 
 # Set the geometry
@@ -584,7 +585,7 @@ physgun_color_every_switch_checkbox.grid(row=len(apparel_categories) + 5, column
 # Create and pack the customize buttons
 customize_buttons = []
 for i, category in enumerate(apparel_categories):
-    customize_button = tk.Button(root, text="Customize", command=lambda c=category: customize_apparel(c, "False"))
+    customize_button = tk.Button(root, text="Customize", command=lambda c=category: customize_apparel(c, "False", ""))
     customize_button.grid(row=3 + i, column=1, padx=10, pady=5, sticky='w')
     customize_buttons.append(customize_button)
 

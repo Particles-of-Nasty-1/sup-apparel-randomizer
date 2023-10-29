@@ -38,6 +38,7 @@ def load_file(filename, file_type="text"):
 
 # Load the configuration from the JSON file at the beginning of the script
 config = load_file('config.json', file_type="json")
+presets_config = load_file('presets.json', file_type="json")
 
 
 tip_particles = 0
@@ -61,6 +62,18 @@ def update_config(key, value):
     # Save the updated config back to the JSON file
     with open('config.json', 'w') as config_file:
         json.dump(config, config_file, indent=4)
+
+def update_presets_config(selected_preset, key, value):
+    # Check if the selected_preset exists in presets_config, if not, create it
+    if selected_preset not in presets_config:
+        presets_config[selected_preset] = {}
+    
+    # Update the value in the selected preset's category within presets_config
+    presets_config[selected_preset][key] = value
+    
+    # Save the updated presets_config back to the JSON file
+    with open('presets.json', 'w') as presets_file:
+        json.dump(presets_config, presets_file, indent=4)
 
 # Function to select the last string of numbers from a list line
 def select_last_numbers_from_list(category):
@@ -210,10 +223,7 @@ def stop_script():
     update_output_directory_button.config(state=tk.NORMAL)  # Enable the update output directory button
     
 # Function to open a customization window for a specific apparel
-def customize_apparel(category, exclude_select_all=False):
-    if category == "Presets":
-        customize_presets()
-        return
+def customize_apparel(category, presets, exclude_select_all=False):
     customize_window = tk.Toplevel(root)
     customize_window.title(f"Customize {category}")
 
@@ -223,7 +233,14 @@ def customize_apparel(category, exclude_select_all=False):
         for idx, var in enumerate(checkbutton_vars):
             if var.get():
                 selected_items.append(items[idx])
-        update_config(category, selected_items)
+        
+        if presets != 'True':
+            # Update the regular config
+            update_config(category, selected_items)
+        else:
+            # Update the selected preset within presets_config
+            selected_preset = "Preset 1"  # Change this to the selected preset name
+            update_presets_config(selected_preset, category, selected_items)
 
     # Load the contents of the specified .txt file
     list_path = os.path.join(os.path.dirname(__file__), category + '.txt')
@@ -251,13 +268,27 @@ def customize_apparel(category, exclude_select_all=False):
     canvas.create_window((0, 0), window=frame, anchor='nw')
 
     checkbutton_vars = []
-    for idx, item in enumerate(display_items):
-        var = tk.IntVar()
-        checkbutton_vars.append(var)
-        cb = tk.Checkbutton(frame, text=item, variable=var)
-        cb.grid(row=idx, column=0, sticky='w')
-        if items[idx] in config.get(category, []):
-            cb.select()
+    if presets != 'True':
+        print("This is config.json")
+        for idx, item in enumerate(display_items):
+            var = tk.IntVar()
+            checkbutton_vars.append(var)
+            cb = tk.Checkbutton(frame, text=item, variable=var)
+            cb.grid(row=idx, column=0, sticky='w')
+            if items[idx] in config.get(category, []):
+                cb.select()
+    else:
+        print("This is presets.json")
+        selected_preset = "Preset 1"  # Change this to the selected preset name
+        preset_category = presets_config.get(selected_preset, {}).get(category, [])
+        for idx, item in enumerate(display_items):
+            var = tk.IntVar()
+            checkbutton_vars.append(var)
+            cb = tk.Checkbutton(frame, text=item, variable=var)
+            cb.grid(row=idx, column=0, sticky='w')
+            if items[idx] in preset_category:
+                cb.select()
+                  
 
     # Update canvas scrolling region after UI elements have been added
     frame.update_idletasks()
@@ -289,21 +320,11 @@ def customize_apparel(category, exclude_select_all=False):
     update_button = tk.Button(button_frame, text="Update", command=update_customization)
     update_button.grid(row=0, column=1, padx=5)
 
-def handle_customize_preset():
-    customize_categories_window = tk.Toplevel(root)
-    customize_categories_window.title("Customize Categories")
-
-    categories = ["masks", "hats", "glasses", "pets", "scarves"]
-
-    for idx, category in enumerate(categories):
-        btn = tk.Button(customize_categories_window, text=category.capitalize(), command=lambda c=category: customize_apparel(c, exclude_select_all=True))
-        btn.grid(row=idx, column=0, pady=5, padx=10)
-
 # Function to create a customization window for each apparel
 def open_customization_windows():
     for i, list_filename in enumerate(apparel_categories):
         if checkbox_vars[i].get() == 1:
-            customize_apparel(list_filename)
+            customize_apparel(list_filename, 'False')
 
 # Function to generate random numbers
 def generate_numbers():
@@ -461,6 +482,28 @@ def customize_presets():
     delete_preset_button = tk.Button(customize_window, text="Delete Preset", command=lambda: delete_selected_preset(list_path, selected_preset.get(), frame, canvas, checkbuttons))
     delete_preset_button.grid(row=0, column=1, sticky='w', pady=10, padx=10)
 
+def handle_customize_preset():
+        customize_categories_window = tk.Toplevel(root)
+        customize_categories_window.title("")
+        
+        # Set the size of the window
+        customize_categories_window.geometry("175x190")
+        
+        categories = ["masks", "hats", "glasses", "pets", "scarves"]
+        
+        # Determine the length of the longest category and set a consistent width for all buttons
+        max_category_length = max([len(category) for category in categories])
+        button_width = max_category_length + 2  # Adding 2 for some extra spacing
+        
+        # Create a frame to hold the buttons and center it in the window
+        button_frame = tk.Frame(customize_categories_window)
+        button_frame.pack(pady=5)
+        
+        for idx, category in enumerate(categories):
+            btn = tk.Button(button_frame, text=category.capitalize(), width=button_width, 
+                            command=lambda c=category: customize_apparel(c, "True", exclude_select_all=True))
+            btn.grid(row=idx, column=0, pady=5, padx=10)
+
 # Set the geometry
 root.geometry("350x405")
 
@@ -525,7 +568,7 @@ presets_checkbox = tk.Checkbutton(root, text="Presets", variable=presets_var)
 presets_checkbox.grid(row=len(apparel_categories) + 3, column=0, padx=10, pady=5, sticky='w')
 
 # Add the "Customize" button to the right of the "Presets" checkbox
-customize_presets_button = tk.Button(root, text="Customize", command=lambda: customize_apparel("Presets"))
+customize_presets_button = tk.Button(root, text="Customize", command=lambda: customize_presets())
 customize_presets_button.grid(row=len(apparel_categories) + 3, column=1, padx=10, pady=5, sticky='w')
 
 # Checkbox for Player Color's Every Switch
@@ -541,7 +584,7 @@ physgun_color_every_switch_checkbox.grid(row=len(apparel_categories) + 5, column
 # Create and pack the customize buttons
 customize_buttons = []
 for i, category in enumerate(apparel_categories):
-    customize_button = tk.Button(root, text="Customize", command=lambda c=category: customize_apparel(c))
+    customize_button = tk.Button(root, text="Customize", command=lambda c=category: customize_apparel(c, "False"))
     customize_button.grid(row=3 + i, column=1, padx=10, pady=5, sticky='w')
     customize_buttons.append(customize_button)
 

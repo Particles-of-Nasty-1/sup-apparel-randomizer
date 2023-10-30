@@ -376,107 +376,6 @@ def generate_numbers():
         # Generate 3 random numbers between 0.000000 and 1.000000
         random_numbers = ' '.join(map(str, [random.uniform(0, 1) for _ in range(3)]))
         return random_numbers
-        
-def refresh_ui(json_path, frame, canvas, checkbuttons, customize_buttons):
-    # Read the JSON file and update the UI
-    with open(json_path, 'r') as file:
-        data = json.load(file)
-        items = list(data.keys())
-
-    # Clear existing checkbuttons and customize buttons
-    for cb in checkbuttons:
-        cb.destroy()
-    for btn in customize_buttons:
-        btn.destroy()
-    
-    checkbutton_vars = []
-    selected_preset = tk.StringVar()
-
-    for idx, item in enumerate(items):
-        var = tk.IntVar()
-        checkbutton_vars.append(var)
-
-        def select_preset(i=item, cb_var=var, current_cb=None):
-            selected_preset.set(i)
-            for chk in checkbuttons:
-                if chk.winfo_exists():  # Check if the checkbutton still exists
-                    chk.configure(bg="white")
-            if current_cb and cb_var.get():
-                current_cb.configure(bg="blue")
-
-        cb = tk.Checkbutton(frame, text=item, variable=var)
-        cb.grid(row=idx, column=0, sticky='w')
-
-        # Bind the button-1 event and command after the cb is defined
-        cb.configure(command=lambda i=item, cb_var=var, current_cb=cb: select_preset(i, cb_var, current_cb))
-        cb.bind("<Button-1>", lambda event, i=item, cb_var=var, current_cb=cb: select_preset(i, cb_var, current_cb))
-
-        checkbuttons.append(cb)  # Keep track of checkbuttons
-
-        # Add a "Customize" button next to each preset name and pass the item (preset name) to the handler function
-        customize_button = tk.Button(frame, text="Customize", command=lambda i=item: handle_customize_preset(i))
-        customize_button.grid(row=idx, column=1, sticky='w', padx=5)
-        customize_buttons.append(customize_button)  # Keep track of customize buttons
-
-        for i, category in enumerate(apparel_categories):
-            if category != 'presets':
-                customize_button = tk.Button(root, text="Customize", command=lambda c=category: customize_apparel(c, "False", ""))
-                customize_button.grid(row=3 + i, column=1, padx=10, pady=5, sticky='w')
-                customize_buttons.append(customize_button)
-
-    # Update canvas scrolling region after UI elements have been added
-    frame.update_idletasks()
-    canvas.config(scrollregion=canvas.bbox("all"))
-
-def add_preset(json_path, frame, canvas, checkbuttons):
-    with open(json_path, 'r') as file:
-        data = json.load(file)
-
-    # Create a Tkinter root window
-    root = tk.Tk()
-    root.withdraw()  # Hide the main window
-
-    # Prompt the user for a custom preset name
-    new_preset_name = tk.simpledialog.askstring("Preset Name", "Enter a custom name for the preset (max 15 characters):")
-
-    # Check if the user canceled the input dialog
-    if new_preset_name is None:
-        root.destroy()
-        return
-
-    # Ensure the preset name is not longer than 15 characters
-    new_preset_name = new_preset_name[:30]
-
-    # Ensure the new preset name is unique
-    original_preset_name = new_preset_name
-    counter = 1
-    while new_preset_name in data:
-        temp_name = f"{original_preset_name} ({counter})"
-        new_preset_name = temp_name[:15]
-        counter += 1
-
-    data[new_preset_name] = {}
-
-    with open(json_path, 'w') as file:
-        json.dump(data, file, indent=4)
-
-    root.destroy()  # Close the Tkinter window
-
-    # Refresh the UI to reflect the changes
-    refresh_ui(json_path, frame, canvas, checkbuttons, customize_buttons)
-
-def delete_selected_preset(json_path, selected_preset_name, frame, canvas, checkbuttons):
-    with open(json_path, 'r') as file:
-        data = json.load(file)
-
-    if selected_preset_name in data:
-        del data[selected_preset_name]
-
-        with open(json_path, 'w') as file:
-            json.dump(data, file, indent=4)
-
-    # Refresh the UI to reflect the changes
-    refresh_ui(json_path, frame, canvas, checkbuttons, customize_buttons)
 
 def customize_presets():
     customize_window = tk.Toplevel(root)
@@ -523,7 +422,7 @@ def customize_presets():
                 if chk.winfo_exists():  # Check if the checkbutton still exists
                     chk.configure(bg="white")
             if current_cb and cb_var.get():
-                current_cb.configure(bg="blue")
+                current_cb.configure(bg="white")
 
         cb = tk.Checkbutton(frame, text=item, variable=var)
         cb.grid(row=idx, column=0, sticky='w')
@@ -577,13 +476,6 @@ def customize_presets():
     # Update canvas scrolling region after UI elements have been added
     frame.update_idletasks()
     canvas.config(scrollregion=canvas.bbox("all"))
-
-    # Add Preset and Delete Preset buttons
-    add_preset_button = tk.Button(customize_window, text="Add Preset", command=lambda: add_preset(list_path, frame, canvas, checkbuttons))
-    add_preset_button.grid(row=0, column=0, sticky='w', pady=10, padx=10)
-
-    delete_preset_button = tk.Button(customize_window, text="Delete Preset", command=lambda: delete_selected_preset(list_path, selected_preset.get(), frame, canvas, checkbuttons))
-    delete_preset_button.grid(row=0, column=1, sticky='w', pady=10, padx=10)
 
 def handle_customize_preset(i):
         customize_categories_window = tk.Toplevel(root)

@@ -124,8 +124,10 @@ def overwrite_cfg(last_numbers, output_directory, output_filename, random_number
         file.writelines(lines_to_write)
 
     print(f"Selected Apparel: {name}")
-    print(random_numbers)
-    print(random_numbers2)
+    if random_numbers != "echo":
+        print(random_numbers)
+    if random_numbers2 != "echo":
+        print(random_numbers2)
 
 # Function to press the F9 key
 def press_f9_key():

@@ -17,7 +17,7 @@ def is_gmod_active():
     return False
 
 # Define the apparel categories
-apparel_categories = ['masks', 'hats', 'glasses', 'pets', 'scarves']
+apparel_categories = ['masks', 'hats', 'glasses', 'pets', 'scarves', 'presets']
 
 def load_file(filename, file_type="text"):
     try:
@@ -40,7 +40,7 @@ def load_file(filename, file_type="text"):
 config = load_file('config.json', file_type="json")
 presets_config = load_file('presets.json', file_type="json")
 
-
+last_selected_preset = None
 tip_particles = 0
 tip_button_clicked = False
 def tip_button():
@@ -75,19 +75,26 @@ def update_presets_config(selected_preset, key, value):
     with open('presets.json', 'w') as presets_file:
         json.dump(presets_config, presets_file, indent=4)
 
-# Function to select the last string of numbers from a list line
-def select_last_numbers_from_list(category):
-    items = config.get(category, [])
-    
-    # Exclude the previously selected items for this category
-    if category in last_selected:
-        items = [item for item in items if item != last_selected[category]]
-            
-    # Now choose from the remaining items
-    if items:
-        chosen_item = random.choice(items)
+def select_last_numbers_from_list(category, preset_name):
+    # Check if a preset is selected, and use the corresponding categories from presets_config
+    if preset_name and category in presets_config.get(preset_name, {}):
+        items = presets_config[preset_name][category]
     else:
-        chosen_item = ''
+        items = config.get(category, [])
+    
+    # If there's only one item, choose it regardless of whether it was last selected
+    if len(items) == 1:
+        chosen_item = items[0]
+    else:
+        # Exclude the previously selected item for this category
+        if category in last_selected:
+            items = [item for item in items if item != last_selected[category]]
+        
+        # Now choose from the remaining items
+        if items:
+            chosen_item = random.choice(items)
+        else:
+            chosen_item = ''
 
     last_selected[category] = chosen_item  # Update the last selected item for this category
         
@@ -126,7 +133,7 @@ def press_f9_key():
 
 # Function to run the main script
 def run_script():
-    global categories_order, last_selected, config, tip_particles, tip_button_clicked
+    global categories_order, last_selected, config, tip_particles, tip_button_clicked, presets_config, last_selected_preset
 
     # Extract configuration values
     output_directory = config['output_directory'] + '\\garrysmod\\cfg'
@@ -134,9 +141,36 @@ def run_script():
     time_delay_seconds = int(config['time_delay_seconds'])
 
     while running_flag.is_set():
-        # Get the list of selected categories
+        # Get the list of selected apparel categories
         selected_categories = [apparel_categories[i] for i, var in enumerate(checkbox_vars) if var.get() == 1]
+        selected_presets = [preset for preset in config['presets'] if preset != last_selected_preset] if presets_var.get() == 1 else []
 
+        # Initialize a variable to hold the preset name if one is selected
+        preset_name = None
+
+        # If no apparel categories are selected
+        if not selected_categories:
+            if selected_presets:
+                preset_name = random.choice(selected_presets)
+            elif presets_var.get() == 1 and last_selected_preset:
+                # If it's the last selected preset and it's the only one checked, do nothing
+                continue
+        else:
+            # If apparel categories are selected, 50/50 chance to choose between them and a preset
+            if random.choice([True, False]):
+                if selected_presets:
+                    preset_name = random.choice(selected_presets)
+                elif presets_var.get() == 1 and last_selected_preset:
+                    # If it's the last selected preset, but there's only one checked, use the apparel category instead
+                    preset_name = None
+            else:
+                # Reset the last selected preset after choosing a new apparel category
+                last_selected_preset = None
+
+        # Update the last selected preset and print it to the console
+        if preset_name:
+            selected_categories = list(presets_config[preset_name].keys())
+            last_selected_preset = preset_name
         # Check if either physgun_color or player_color are selected
         color_selected = physgun_color_var.get() == 1 or player_color_var.get() == 1
 
@@ -163,7 +197,8 @@ def run_script():
             if not tip_button_clicked:  # Only reset if the tip_button wasn't clicked in the last iteration
                 tip_particles = 0
 
-            if is_gmod_active():  # Check if GMod is the active window
+            if is_gmod_active():  # Check if GMod is the active window   
+                print(f"Selected Preset: {preset_name}")  # Print the selected preset name to the console
                 if player_color_var.get():
                     if player_color_every_switch_var.get() or not first_apparel_processed:
                         random_numbers = generate_numbers()
@@ -182,7 +217,7 @@ def run_script():
                 
                 # Only fetch apparel if the category isn't 'dummy'
                 if category != 'dummy':
-                    last_numbers = select_last_numbers_from_list(category)
+                    last_numbers = select_last_numbers_from_list(category, preset_name)
                     overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2)
                     tip_particles = 0
                     press_f9_key()  # Press the button after processing each apparel item
@@ -239,7 +274,7 @@ def customize_apparel(category, presets, preset_name, exclude_select_all=False):
             update_config(category, selected_items)
         else:
             # Update the selected preset within presets_config
-            selected_preset = preset_name  # Change this to the selected preset name
+            selected_preset = preset_name  
             update_presets_config(selected_preset, category, selected_items)
 
     # Load the contents of the specified .txt file
@@ -450,7 +485,10 @@ def customize_presets():
     for idx, item in enumerate(items):
         var = tk.IntVar()
         checkbutton_vars.append(var)
-
+        cb = tk.Checkbutton(frame, text=item, variable=var)
+        cb.grid(row=idx, column=0, sticky='w')
+        if items[idx] in config.get(category, []):
+            cb.select()
         def select_preset(i=item, cb_var=var, current_cb=None):
             selected_preset.set(i)
             for chk in checkbuttons:
@@ -471,7 +509,43 @@ def customize_presets():
         customize_button.grid(row=idx, column=1, sticky='w', padx=5)
 
         checkbuttons.append(cb)  # Keep track of checkbuttons
+    
+    category_preset = 'presets'
 
+    # Function to update the configuration when customizing
+    def update_customization_p():
+        selected_items = []
+        for idx, var in enumerate(checkbutton_vars):
+            if var.get():
+                selected_items.append(items[idx])
+
+        update_config(category_preset, selected_items)
+
+    # Function to select all items
+    def select_all():
+        for var in checkbutton_vars:
+            var.set(1)
+
+    # Function to deselect all items
+    def deselect_all():
+        for var in checkbutton_vars:
+            var.set(0)
+
+    # Create a frame for the buttons
+    button_frame = tk.Frame(customize_window)
+    button_frame.grid(row=2, column=0, columnspan=2, pady=10)
+
+    # Create Select All and Deselect All buttons inside the frame
+    select_all_button = tk.Button(button_frame, text="Select All", command=select_all)
+    select_all_button.grid(row=0, column=0, padx=5)
+
+    deselect_all_button = tk.Button(button_frame, text="Deselect All", command=deselect_all)
+    deselect_all_button.grid(row=0, column=2, padx=5)
+
+    # Place the Update button in the middle
+    update_button = tk.Button(button_frame, text="Update", command=update_customization_p)
+    update_button.grid(row=0, column=1, padx=5)
+        
     # Update canvas scrolling region after UI elements have been added
     frame.update_idletasks()
     canvas.config(scrollregion=canvas.bbox("all"))
@@ -544,14 +618,15 @@ output_directory_entry.insert(0, config.get('output_directory', "C:\\SteamLibrar
 update_output_directory_button = tk.Button(root, text="Update", command=lambda: update_config('output_directory', output_directory_entry.get()))
 update_output_directory_button.grid(row=2, column=2, padx=10, pady=5, sticky='w')
 
-# Add checkbox's for the apparel categories
+# Add checkbox's for the apparel categories excluding 'presets'
 checkbox_vars = []
 for i, category in enumerate(apparel_categories):
-    checkbox_var = tk.IntVar()
-    checkbox_vars.append(checkbox_var)
-    checkbox_text = category.capitalize()  # Capitalize the first letter
-    checkbox = tk.Checkbutton(root, text=checkbox_text, variable=checkbox_var)
-    checkbox.grid(row=3 + i, column=0, padx=10, pady=5, sticky='w')
+    if category != 'presets':
+        checkbox_var = tk.IntVar()
+        checkbox_vars.append(checkbox_var)
+        checkbox_text = category.capitalize()  # Capitalize the first letter
+        checkbox = tk.Checkbutton(root, text=checkbox_text, variable=checkbox_var)
+        checkbox.grid(row=3 + i, column=0, padx=10, pady=5, sticky='w')
 
 # Add a "Player Color" checkbox below the existing checkboxes
 player_color_var = tk.IntVar()
@@ -582,12 +657,13 @@ physgun_color_every_switch_var = tk.IntVar()
 physgun_color_every_switch_checkbox = tk.Checkbutton(root, text="Every Switch", variable=physgun_color_every_switch_var)
 physgun_color_every_switch_checkbox.grid(row=len(apparel_categories) + 5, column=1, padx=10, pady=5, sticky='w')
 
-# Create and pack the customize buttons
+# Create and pack the customize buttons, excluding 'presets'
 customize_buttons = []
 for i, category in enumerate(apparel_categories):
-    customize_button = tk.Button(root, text="Customize", command=lambda c=category: customize_apparel(c, "False", ""))
-    customize_button.grid(row=3 + i, column=1, padx=10, pady=5, sticky='w')
-    customize_buttons.append(customize_button)
+    if category != 'presets':
+        customize_button = tk.Button(root, text="Customize", command=lambda c=category: customize_apparel(c, "False", ""))
+        customize_button.grid(row=3 + i, column=1, padx=10, pady=5, sticky='w')
+        customize_buttons.append(customize_button)
 
 # Initialize the running flag
 running_flag = threading.Event()

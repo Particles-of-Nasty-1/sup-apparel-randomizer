@@ -218,11 +218,12 @@ def run_script():
                 # Only fetch apparel if the category isn't 'dummy'
                 if category != 'dummy' :
                     last_numbers = select_last_numbers_from_list(category, preset_name)
-                    overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2)
-                    tip_particles = 0
-                    press_f9_key()  # Press the button after processing each apparel item
-                    time.sleep(1)  # Wait for a bit after selecting each apparel item
-                    first_apparel_processed = True
+                    if last_numbers.strip() != '':
+                        overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2)
+                        tip_particles = 0
+                        press_f9_key()  # Press the button after processing each apparel item
+                        time.sleep(1)  # Wait for a bit after selecting each apparel item
+                        first_apparel_processed = True
                 else:
                     # If no apparel category is selected, just update colors
                     overwrite_cfg('', output_directory, output_filename, random_numbers, random_numbers2)
@@ -314,7 +315,6 @@ def customize_apparel(category, presets, preset_name, exclude_select_all=False):
                         v.set(0)
 
     if presets != 'True':
-        print("This is config.json")
         for idx, item in enumerate(display_items):
             var = tk.IntVar()
             checkbutton_vars.append(var)
@@ -323,7 +323,6 @@ def customize_apparel(category, presets, preset_name, exclude_select_all=False):
             if items[idx] in config.get(category, []):
                 cb.select()
     else:
-        print("This is presets.json")
         selected_preset = preset_name
         preset_category = presets_config.get(selected_preset, {}).get(category, [])
         for idx, item in enumerate(display_items):

@@ -138,7 +138,7 @@ def run_script():
     # Extract configuration values
     output_directory = config['output_directory'] + '\\garrysmod\\cfg'
     output_filename = config['output_filename']
-    time_delay_seconds = int(config['time_delay_seconds'])
+    time_delay_seconds = int(config['time_delay_seconds']) 
 
     while running_flag.is_set():
         # Get the list of selected apparel categories
@@ -218,7 +218,7 @@ def run_script():
                     random_numbers2 = "echo"
                 
                 # Only fetch apparel if the category isn't 'dummy'
-                if category != 'dummy':
+                if category != 'dummy' :
                     last_numbers = select_last_numbers_from_list(category, preset_name)
                     overwrite_cfg(last_numbers, output_directory, output_filename, random_numbers, random_numbers2)
                     tip_particles = 0
@@ -230,6 +230,8 @@ def run_script():
                     overwrite_cfg('', output_directory, output_filename, random_numbers, random_numbers2)
                     tip_particles = 0
                     press_f9_key()  # Press the button after updating colors
+                    
+                    time.sleep(1)  # Wait for a bit after selecting each apparel item
 
                 tip_button_clicked = False
 
@@ -632,7 +634,7 @@ time_delay_label.grid(row=1, column=0, padx=10, pady=5, sticky='e')
 time_delay_entry = tk.Entry(root)
 time_delay_entry.grid(row=1, column=1, padx=10, pady=5, sticky='w')
 # Populate time_delay_entry with the value from the config (if available)
-time_delay_entry.insert(0, str(config.get('time_delay_seconds', "60")))
+time_delay_entry.insert(0, int(config.get('time_delay_seconds', "60")))
 update_time_delay_button = tk.Button(root, text="Update", command=lambda: update_config('time_delay_seconds', time_delay_entry.get()))
 update_time_delay_button.grid(row=1, column=2, padx=10, pady=5, sticky='w')
 

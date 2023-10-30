@@ -196,10 +196,8 @@ def run_script():
 
         first_apparel_processed = False
         for category in selected_categories:
-            if not tip_button_clicked:  # Only reset if the tip_button wasn't clicked in the last iteration
-                tip_particles = 0
-
-            if is_gmod_active():  # Check if GMod is the active window   
+            
+            if is_gmod_active():  # Check if GMod is the active window
                 print(f"Selected Preset: {preset_name}")  # Print the selected preset name to the console
                 if player_color_var.get():
                     if player_color_every_switch_var.get() or not first_apparel_processed:

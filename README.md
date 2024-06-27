@@ -10,3 +10,5 @@ To actually use this program you need to contact Particles for a list of .txt co
 6. Click the checkbox next to the apparel categories you wish to use.
 7. Click Start
 8. Profit
+
+Credits for valvecmd.exe -> https://github.com/Python1320/valvecmd
